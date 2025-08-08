@@ -8,11 +8,14 @@
 import SwiftUI
 import Foundation
 import MultipeerKit
+import Network
 
 class MultipeerService: ObservableObject {
     @AppStorage("ncGroupID") var ncGroupID = ""
     @AppStorage("deviceName") var deviceName = "Mac"
+    @AppStorage("httpBridgeEnabled") var httpBridgeEnabled = true  // Enable HTTP bridge by default
     let transceiver: MultipeerTransceiver
+    private var httpListener: NWListener?
 
     init(serviceType: String) {
         let configuration = MultipeerConfiguration(
@@ -110,6 +113,11 @@ class MultipeerService: ObservableObject {
         }
         
         print("⚙️ Nearcast Group ID: \(ncGroupID)")
+        
+        // Setup HTTP bridge if enabled
+        if httpBridgeEnabled {
+            setupHTTPBridge()
+        }
     }
     
     func resume() {
@@ -119,6 +127,7 @@ class MultipeerService: ObservableObject {
     
     func stop() {
         transceiver.stop()
+        httpListener?.cancel()
         print("ℹ️ Nearcast has stopped")
     }
 
@@ -167,6 +176,132 @@ class MultipeerService: ObservableObject {
             print("Write JSON error：\(error)")
         }
         return nil
+    }
+    
+    // MARK: - HTTP Bridge for Android Integration
+    
+    private func setupHTTPBridge() {
+        do {
+            httpListener = try NWListener(using: .tcp, on: 7550)
+            httpListener?.newConnectionHandler = { [weak self] connection in
+                self?.handleHTTPConnection(connection)
+            }
+            httpListener?.start(queue: .main)
+            print("🌐 HTTP bridge listening on port 7550 for Android devices")
+        } catch {
+            print("❌ Failed to start HTTP bridge: \(error)")
+        }
+    }
+    
+    private func handleHTTPConnection(_ connection: NWConnection) {
+        connection.start(queue: .global())
+        
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, isComplete, error in
+            if let data = data, !data.isEmpty {
+                self.processHTTPRequest(data, connection: connection)
+            }
+            
+            if isComplete {
+                connection.cancel()
+            }
+        }
+    }
+    
+    private func processHTTPRequest(_ data: Data, connection: NWConnection) {
+        guard let httpString = String(data: data, encoding: .utf8) else {
+            sendHTTPResponse(connection: connection, status: "400 Bad Request", body: "Invalid data")
+            return
+        }
+        
+        // Parse HTTP request
+        let lines = httpString.components(separatedBy: "\r\n")
+        guard let firstLine = lines.first else {
+            sendHTTPResponse(connection: connection, status: "400 Bad Request", body: "Invalid request")
+            return
+        }
+        
+        // Handle OPTIONS for CORS
+        if firstLine.hasPrefix("OPTIONS") {
+            sendHTTPResponse(connection: connection, status: "200 OK", body: "")
+            return
+        }
+        
+        // Handle POST to /airbattery
+        guard firstLine.hasPrefix("POST /airbattery") else {
+            sendHTTPResponse(connection: connection, status: "404 Not Found", body: "Not found")
+            return
+        }
+        
+        // Extract JSON body
+        if let emptyLineIndex = lines.firstIndex(of: ""),
+           emptyLineIndex + 1 < lines.count {
+            let jsonBody = lines[(emptyLineIndex + 1)...].joined(separator: "\r\n")
+            
+            if let jsonData = jsonBody.data(using: .utf8),
+               let ncMessage = try? JSONDecoder().decode(NCMessage.self, from: jsonData) {
+                
+                // Validate group ID
+                if ncMessage.id == String(ncGroupID.prefix(15)) {
+                    // Process as if received via MultipeerKit
+                    processReceivedMessage(ncMessage, fromAndroid: true)
+                    sendHTTPResponse(connection: connection, status: "200 OK", body: "Message processed")
+                } else {
+                    sendHTTPResponse(connection: connection, status: "403 Forbidden", body: "Invalid group ID")
+                }
+            } else {
+                sendHTTPResponse(connection: connection, status: "400 Bad Request", body: "Invalid JSON")
+            }
+        } else {
+            sendHTTPResponse(connection: connection, status: "400 Bad Request", body: "No body")
+        }
+    }
+    
+    private func processReceivedMessage(_ message: NCMessage, fromAndroid: Bool = false) {
+        // Same logic as the MultipeerKit receiver, but without peer parameter
+        DispatchQueue.global().async {
+            switch message.command {
+            case "":
+                print("📱 Android data received.")
+                if let jsonString = decryptString(message.content, password: self.ncGroupID) {
+                    if let jsonData = jsonString.data(using: .utf8) {
+                        let url = ncFolder.appendingPathComponent("\(message.sender).json")
+                        try? jsonData.write(to: url)
+                        print("✅ Android battery data saved")
+                    } else {
+                        print("Failed to convert JSON string to Data.")
+                    }
+                }
+            case "notify":
+                print("📱 Android notification received.")
+                if let jsonString = decryptString(message.content, password: self.ncGroupID) {
+                    if let jsonData = jsonString.data(using: .utf8) {
+                        if let info = try? JSONDecoder().decode(NCNotification.self, from: jsonData) {
+                            createNotification(title: info.title, message: "\(info.info) (from Android)")
+                        }
+                    }
+                }
+            default:
+                print("📱 Android command '\(message.command)' received")
+            }
+        }
+    }
+    
+    private func sendHTTPResponse(connection: NWConnection, status: String, body: String) {
+        let response = """
+        HTTP/1.1 \(status)
+        Content-Type: text/plain
+        Content-Length: \(body.utf8.count)
+        Access-Control-Allow-Origin: *
+        Access-Control-Allow-Methods: POST, OPTIONS
+        Access-Control-Allow-Headers: Content-Type
+        
+        \(body)
+        """
+        
+        let data = response.data(using: .utf8)!
+        connection.send(content: data, completion: .contentProcessed { _ in
+            connection.cancel()
+        })
     }
 }
 
