@@ -11,7 +11,7 @@
 ## Installation and Usage
 ### System Requirements:
 - macOS 11.0 and Later
-- Android 4.0 and Later
+- Android 4.0 and Later (Tasker requirement, but not tested on any version below the Android 16 QPR1 Beta 3 😐)
 - Tasker 4.2u3 (if you have it installed, you likely have a version higher than this)
 
 ### Installation:
