@@ -16,12 +16,16 @@
 
 ### Installation:
 1. Download the latest installation file [here](../../releases/latest) on your Mac
-2. Open [tasker_airbattery_sender.js](https://github.com/Firebolt9907/AirBattery/blob/main/tasker_airbattery_sender.js) in a new tab, and copy the file contents into a text editor such as TextEdit
-3. Replace the 4 variables in the configuration section to match your mac as shown in comments
-4. Copy the file contents to your Android device (using Google Docs, KDE Connect Clipboard Sync, or a similar technology)
-5. Create a Tasker task and add an action for "JavaScriptlet"
-6. Paste the file contents into the code section
-7. Scroll down, disable "Auto Exit", and reduce the "Timeout" to something below 15 seconds to reduce battery impact
+2. Turn on Nearcast after installation
+3. Open [tasker_airbattery_sender.js](https://github.com/Firebolt9907/AirBattery/blob/main/tasker_airbattery_sender.js) in a new tab, and copy the file contents into a text editor such as TextEdit
+4. Replace the 4 variables in the configuration section to match your mac as shown in comments
+5. Copy the file contents to your Android device (using Google Docs, KDE Connect Clipboard Sync, or a similar technology)
+6. Create a Tasker task and add an action for "JavaScriptlet"
+7. Paste the file contents into the code section
+8. Scroll down, disable "Auto Exit", and reduce the "Timeout" to something below 15 seconds to reduce battery impact
+9. Back out of the task, and create a profile
+10. Set trigger to Event -> Power -> Battery Changed
+11. Set task to run as the task you created earlier
 
 ### Usage: 
 Shared with original:
