@@ -4,7 +4,7 @@
 <h1 align="center">AirBattery</h1>
 <h3 align="center">Get battery usage of all devices on Mac and show them on the Dock / StatusBar / Widgets!<br></h3> 
 <h3 align="center">DISCLAIMER: THIS IS NOT THE OFFICIAL REPO, THIS IS A FORK</h3>
-<h4 align="center">[Visit the official project](https://github.com/lihaoyun6/AirBattery)</h4>
+<h4 align="center"><a href="https://github.com/lihaoyun6/AirBattery">Visit the official project()</a></h4>
 
 </p>
 
@@ -43,4 +43,5 @@ Unique to this fork:
 
 ## Donate to the original creator
 This fork would not be possible without lihaoyun6
+
 <img src="./img/donate.png" width="350"/>
