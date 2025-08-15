@@ -24,6 +24,7 @@ var menuPopover = NSPopover()
 let bleBattery = BLEBattery()
 let btdBattery = BTDBattery()
 var updateDelay = 1
+var keepAliveActivity: NSObjectProtocol? = nil
 
 @main
 struct AirBatteryApp: App {
@@ -275,6 +276,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        let opts: ProcessInfo.ActivityOptions = [.automaticTerminationDisabled, .suddenTerminationDisabled]
+        keepAliveActivity = ProcessInfo.processInfo.beginActivity(options: opts, reason: "AirBattery menu bar monitoring")
+
         if showOn == "dock" || showOn == "both" {
             let tipID = "ab.docktile-power.note"
             let never = ud.object(forKey: "neverRemindMe") as! [String]
@@ -295,6 +299,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        if let act = keepAliveActivity { ProcessInfo.processInfo.endActivity(act) }
+
         _ = process(path: "/usr/bin/killall", arguments: ["idevicesyslog"])
     }
     
@@ -501,4 +507,30 @@ func refeshPinnedBar(unpin: String? = nil) {
     let expNames = expItems.map({ $0.button?.toolTip ?? "" })
     DispatchQueue.main.async { for e in expItems { NSStatusBar.system.removeStatusItem(e) } }
     pinnedItems.removeAll{ expNames.contains($0.button?.toolTip ?? "") }
+}
+
+@discardableResult
+func ensureLoginItem(enabled: Bool) -> Bool {
+    let helperBundleIdentifier = "com.lihaoyun6.AirBatteryHelper"
+    if #available(macOS 13.0, *) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            return true
+        } catch {
+            NSLog("[AirBattery] SMAppService register/unregister failed: \(error.localizedDescription)")
+            return false
+        }
+    } else {
+        let ok = SMLoginItemSetEnabled(helperBundleIdentifier as CFString, enabled)
+        if !ok { NSLog("[AirBattery] SMLoginItemSetEnabled failed for \(helperBundleIdentifier)") }
+        return ok
+    }
+}
+
+func registerDefaults() {
+    UserDefaults.standard.register(defaults: ["LaunchAtLogin": false])
 }
