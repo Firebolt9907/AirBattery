@@ -35,15 +35,12 @@ Shared with original:
 - You can also use the **"Nearcast"** feature to check the battery usage of other Macs and their peripherals in the LAN at any time.  
 - You can also change the status bar icon to a real-time battery icon in preferences, just like the one that comes with the system.  
 - If necessary, you can hide certain devices in the Dock menu or status bar menu, and unhide them at any time.
+
 Unique to this fork:
 - The Nearcast feature now extends to Android devices that run the Tasker script above in the LAN or over Tailscale
 
 ### Demo of fork's usage:
-<p>
-    <video src="./demo.mov" controls autoplay muted loop playsinline width="800">
-        Your browser does not support the video tag.
-    </video>
-</p>
+https://github.com/user-attachments/assets/eac93f6e-e5d1-4686-950f-f6968acf383c
 
 ## Q&A
 **1. Why does the original not have Android support?**
