@@ -38,6 +38,13 @@ Shared with original:
 Unique to this fork:
 - The Nearcast feature now extends to Android devices that run the Tasker script above in the LAN or over Tailscale
 
+### Demo of fork's usage:
+<p>
+    <video src="./demo.mov" controls autoplay muted loop playsinline width="800">
+        Your browser does not support the video tag.
+    </video>
+</p>
+
 ## Q&A
 **1. Why does the original not have Android support?**
 > The creator has [mentioned](https://www.reddit.com/r/macapps/comments/1d7033b/comment/l6wbubx/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) that there is no Android support, and while they didn't state why, I found out the hard way. The project uses [MultipeerKit](https://github.com/insidegui/MultipeerKit), which is exclusive to Apple devices.
