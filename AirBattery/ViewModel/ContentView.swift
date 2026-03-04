@@ -579,9 +579,11 @@ struct popover: View {
                                                 if #available(macOS 14, *) {
                                                     Button(action: {
                                                         copyToClipboard(allDevices[index].deviceName)
-                                                        _ = createAlert(title: "Device Name Copied".local,
-                                                                        message: String(format: "Device name \"%@\" has been copied to the clipboard.".local, allDevices[index].deviceName),
-                                                                        button1: "OK".local).runModal()
+                                                        DispatchQueue.main.async {
+                                                            _ = createAlert(title: "Device Name Copied".local,
+                                                                            message: String(format: "Device name \"%@\" has been copied to the clipboard.".local, allDevices[index].deviceName),
+                                                                            button1: "OK".local).runModal()
+                                                        }
                                                     }, label: {
                                                         Image("list.clipboard.fill.circle")
                                                             .resizable().scaledToFit()
